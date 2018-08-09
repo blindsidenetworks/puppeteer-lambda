@@ -82,8 +82,16 @@ Change 100 to whatever value you wish.  Next, edit the warmup time (a random sle
 ~~~
   timeout 120 sleep $(( ( RANDOM % 30 )  + 1 )) && ./run.sh >> /tmp/out.txt &
 ~~~
-
 After your execute `gather.sh`, it will generate a local  `index.html` file that references the screenshot for every image.  Open this file in a browser to see the results of the tests.
+
+For example, after starting 100 clients, login with an HTML5 client (using the URL you added to `run.js`.  As the puppeteer clients load, try drawing on the screen.
+
+![drawing](/images/drawing.png)
+
+All the clients should display the numbers exactly.  After the clients exit, open the generated `index.html` to see what the last screen shot was for each client.
+
+![last](/images/screen-shot.png)
+
 
 
 
