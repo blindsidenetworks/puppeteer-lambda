@@ -90,7 +90,7 @@ For example, after starting 100 clients, login with an HTML5 client (using the U
 
 All the clients should display the numbers exactly.  After the clients exit, open the generated `index.html` to see what the last screen shot was for each client.
 
-![last](/images/screen-shot.png)
+![test-results](/images/test-results.png)
 
 
 
