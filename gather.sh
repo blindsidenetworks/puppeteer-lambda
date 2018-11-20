@@ -4,26 +4,89 @@
 # Ogre II
 #
 
-wget -O- -q 'http://test-install.blindsidenetworks.com/bigbluebutton/api/create?allowStartStopRecording=true&attendeePW=ap&autoStartRecording=false&joinViaHtml5=true&meetingID=random-4450177&moderatorPW=mp&name=random-4450177&record=false&voiceBridge=79347&welcome=%3Cbr%3EWelcome+to+%3Cb%3E%25%25CONFNAME%25%25%3C%2Fb%3E%21&checksum=25b883198de699ec31bfd63341b602072ea55ddd' > /dev/null
 
-rm -f /tmp/out.txt
+usage() {
+    cat 1>&2 <<HERE
 
-pids=()
+Script to stress test BigBlueButton using Lambda.
 
-COUNTER=0
-while [ $COUNTER -lt 100 ]; do
-  echo -n '.'
+USAGE
 
-  timeout 120 sleep $(( ( RANDOM % 30 )  + 1 )) && ./run.sh >> /tmp/out.txt &
+  ./gather.sh [OPTIONS]
 
-  pids+=($!)
-  let COUNTER=COUNTER+1 
-done
+OPTIONS (install)
 
-wait "${pids[@]}"
-echo "$(date +%H:%M:%S): Done!"
+  -c <number>		Target for <number> of concurrent users
+HERE
+}
 
-cat << HERE > index.html
+
+main() {
+ while builtin getopts "hc:" opt "${@}"; do
+    case $opt in
+      h)
+        usage
+        exit 0
+        ;;
+
+      c)
+        COUNT=$OPTARG
+        run_series
+        ;;
+
+      :)
+        err "Missing option argument for -$OPTARG"
+        exit 1
+        ;;
+
+      \?)
+        err "Invalid option: -$OPTARG" >&2
+        usage
+        ;;
+    esac
+  done
+
+  if [ -z "$VERSION" ]; then
+    usage
+    exit 0
+  fi
+}
+
+run_series() {
+  COUNTER=0
+  while [ $COUNTER -lt $COUNT ]; do
+    let COUNTER=COUNTER+1
+
+    spawn $COUNTER
+    sleep 10
+  done
+}
+
+spawn() {
+  TARGET=$1
+
+  wget -O- -q 'https://s150.meetbbb.com/bigbluebutton/api/create?allowStartStopRecording=true&attendeePW=ap&autoStartRecording=false&joinViaHtml5=true&meetingID=random-1859718&moderatorPW=mp&name=random-1859718&record=false&voiceBridge=74515&welcome=%3Cbr%3EWelcome+to+%3Cb%3E%25%25CONFNAME%25%25%3C%2Fb%3E%21&checksum=10862faf8e94ff0460242867b11a2904766d2ffc' > /dev/null
+
+  rm -f /tmp/out.txt
+
+  pids=()
+
+  COUNTER=0
+  while [ $COUNTER -lt $TARGET ]; do
+    let COUNTER=COUNTER+1 
+
+    timeout 120 sleep $(( ( RANDOM % 10 )  + 1 )) && ./run.sh >> /tmp/out.txt &
+
+    pids+=($!)
+  done
+
+  wait "${pids[@]}"
+  # echo "$(date +%H:%M:%S): Done!"
+  echo "$TARGET,$(grep true /tmp/out.txt | wc | sed 's/ [ ]*/ /g' | cut -d' ' -f2)"
+}
+
+gen_index() { 
+  cat << HERE > index.html
 <!DOCTYPE HTML>
 <html>
 <header><title>This is title</title></header>
@@ -57,5 +120,7 @@ cat << HERE >> index.html
 </html>
 
 HERE
+}
 
+main "$@" || exit 1
 
